@@ -244,6 +244,12 @@ a=fmtp:101 0-15
           action << doc.create_element('ereg') do |ereg|
             ereg['regexp'] = '<sip:(.*)>'
             ereg['search_in'] = 'hdr'
+            ereg['header'] = 'Contact:'
+            ereg['assign_to'] = 'dummy,contact'
+          end
+          action << doc.create_element('ereg') do |ereg|
+            ereg['regexp'] = '<sip:(.*)>'
+            ereg['search_in'] = 'hdr'
             ereg['header'] = 'To:'
             ereg['assign_to'] = 'dummy,local_addr'
           end
@@ -255,7 +261,7 @@ a=fmtp:101 0-15
         recv << action
       end
       # These variables (except dummy) will only be used if we initiate a hangup
-      @reference_variables += %w(dummy remote_addr remote_tag local_addr call_addr)
+      @reference_variables += %w(dummy remote_addr remote_tag local_addr call_addr contact)
     end
     alias :wait_for_call :receive_invite
 
@@ -269,6 +275,7 @@ a=fmtp:101 0-15
 
 SIP/2.0 100 Trying
 [last_Via:]
+[last_Record-route]
 From: <sip:[$remote_addr]>;tag=[$remote_tag]
 To: <sip:[$local_addr]>;tag=[call_number]
 [last_Call-ID:]
@@ -291,6 +298,7 @@ Content-Length: 0
 
 SIP/2.0 180 Ringing
 [last_Via:]
+[last_Record-route]
 From: <sip:[$remote_addr]>;tag=[$remote_tag]
 To: <sip:[$local_addr]>;tag=[call_number]
 [last_Call-ID:]
@@ -314,6 +322,7 @@ Content-Length: 0
 
 SIP/2.0 200 Ok
 [last_Via:]
+[last_Record-route]
 From: <sip:[$remote_addr]>;tag=[$remote_tag]
 To: <sip:[$local_addr]>;tag=[call_number]
 [last_Call-ID:]
@@ -446,6 +455,7 @@ a=rtpmap:0 PCMU/8000
       msg = <<-BODY
 
 ACK [next_url] SIP/2.0
+[last_Record-route]
 Via: SIP/2.0/[transport] #{@adv_ip}:[local_port];branch=[branch]
 From: "#{@from_user}" <sip:#{@from_user}@#{@from_domain || @adv_ip}:[local_port]>;tag=[call_number]
 To: <sip:#{to_addr}>[peer_tag_param]
@@ -560,7 +570,7 @@ Duration=#{delay}
     def send_bye(opts = {})
       msg = <<-MSG
 
-BYE sip:[$call_addr] SIP/2.0
+BYE sip:[$contact] SIP/2.0
 Via: SIP/2.0/[transport] #{@adv_ip}:[local_port];branch=[branch]
 From: <sip:[$local_addr]>;tag=[call_number]
 To: <sip:[$remote_addr]>;tag=[$remote_tag]
