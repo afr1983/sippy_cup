@@ -245,7 +245,7 @@ a=fmtp:101 0-15
             ereg['regexp'] = '<sip:(.*)>'
             ereg['search_in'] = 'hdr'
             ereg['header'] = 'Contact:'
-            ereg['assign_to'] = 'dummy,contact'
+            ereg['assign_to'] = 'dummy,call_addr'
           end
           action << doc.create_element('ereg') do |ereg|
             ereg['regexp'] = '<sip:(.*)>'
@@ -253,15 +253,11 @@ a=fmtp:101 0-15
             ereg['header'] = 'To:'
             ereg['assign_to'] = 'dummy,local_addr'
           end
-          action << doc.create_element('assignstr') do |assignstr|
-            assignstr['assign_to'] = "call_addr"
-            assignstr['value']     = "[$local_addr]"
-          end
         end
         recv << action
       end
       # These variables (except dummy) will only be used if we initiate a hangup
-      @reference_variables += %w(dummy remote_addr remote_tag local_addr call_addr contact)
+      @reference_variables += %w(dummy remote_addr remote_tag local_addr call_addr)
     end
     alias :wait_for_call :receive_invite
 
@@ -413,10 +409,16 @@ a=rtpmap:0 PCMU/8000
             ereg['header'] = 'To:'
             ereg['assign_to'] = 'dummy,remote_addr,remote_tag'
           end
+          action << doc.create_element('ereg') do |ereg|
+            ereg['regexp'] = '<sip:(.*)>'
+            ereg['search_in'] = 'hdr'
+            ereg['header'] = 'Contact:'
+            ereg['assign_to'] = 'dummy,call_addr'
+          end
         end
       end
       # These variables will only be used if we initiate a hangup
-      @reference_variables += %w(dummy remote_addr remote_tag)
+      @reference_variables += %w(dummy remote_addr remote_tag call_addr)
     end
 
     #
@@ -570,7 +572,7 @@ Duration=#{delay}
     def send_bye(opts = {})
       msg = <<-MSG
 
-BYE sip:[$contact] SIP/2.0
+BYE sip:[$call_addr] SIP/2.0
 Via: SIP/2.0/[transport] #{@adv_ip}:[local_port];branch=[branch]
 From: <sip:[$local_addr]>;tag=[call_number]
 To: <sip:[$remote_addr]>;tag=[$remote_tag]
